@@ -1,5 +1,10 @@
 use std::collections::HashMap;
 
+use reqwest::RequestBuilder;
+use utils::{parse_recaptcha_response, parse_recaptcha_token};
+
+mod utils;
+
 pub struct RsPasser {
     client: reqwest::Client,
 }
@@ -7,29 +12,22 @@ pub struct RsPasser {
 impl RsPasser {
     pub fn new() -> Self {
         Self {
-            client: reqwest::Client::builder().build().unwrap(),
+            client: reqwest::Client::builder()
+                .default_headers(utils::default_headers())
+                .build()
+                .unwrap(),
         }
     }
 
     async fn get_recaptcha_token(&self, _type: String, params: String) -> anyhow::Result<String> {
         let url = format!("https://www.google.com/recaptcha/{_type}/anchor?{params}");
-        let body = self
-            .client
-            .get(url)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .send()
-            .await?
-            .text()
-            .await?;
+        let body = self.reqeust(self.client.get(url)).await?;
 
-        Ok(body
-            .split("id=\"recaptcha-token\" value=\"")
-            .last()
-            .unwrap()
-            .split('\"')
-            .next()
-            .unwrap()
-            .to_string())
+        Ok(parse_recaptcha_token(body))
+    }
+
+    async fn reqeust(&self, request: RequestBuilder) -> anyhow::Result<String> {
+        request.send().await?.text().await.map_err(|e| e.into())
     }
 
     async fn get_recaptcha_response(
@@ -38,26 +36,17 @@ impl RsPasser {
         post_data: String,
         site_key: String,
     ) -> anyhow::Result<String> {
-        let data = self
-            .client
-            .post(format!(
-                "https://www.google.com/recaptcha/{_type}/reload?k={site_key}",
-            ))
-            .header("content-type", "application/x-www-form-urlencoded")
-            .body(post_data)
-            .send()
-            .await?
-            .text()
+        let body = self
+            .reqeust(
+                self.client
+                    .post(format!(
+                        "https://www.google.com/recaptcha/{_type}/reload?k={site_key}",
+                    ))
+                    .body(post_data),
+            )
             .await?;
 
-        Ok(data
-            .split("resp\",\"")
-            .last()
-            .unwrap()
-            .split('\"')
-            .next()
-            .unwrap()
-            .to_string())
+        Ok(parse_recaptcha_response(body))
     }
 
     pub async fn solve_captcha(&self, anchor_url: String) -> anyhow::Result<String> {
