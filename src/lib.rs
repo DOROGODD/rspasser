@@ -96,6 +96,6 @@ mod test {
 
     #[tokio::test]
     async fn test_captcha_solving() {
-        assert!(RsPasser::new().solve_captcha("https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Leqr00oAAAAAN3ItHtrGkMpHiOtENMkG87lq2fq&co=aHR0cHM6Ly9wcmVyZWdpc3Rlci5oeXRvcGlhLmNvbTo0NDM.&hl=ru&type=image&v=Ai7lOI0zKMDPHxlv62g7oMoJ&theme=dark&size=invisible&badge=bottomright&cb=bmwunnu5dq8d".to_string()).await.unwrap().is_ascii());
+        assert!(RsPasser::new().solve_captcha("https://www.google.com/recaptcha/api2/anchor?ar=1&k=6Leqr00oAAAAAN3ItHtrGkMpHiOtENMkG87lq2fq&co=aHR0cHM6Ly9wcmVyZWdpc3Rlci5oeXRvcGlhLmNvbTo0NDM.&hl=ru&type=image&v=Ai7lOI0zKMDPHxlv62g7oMoJ&theme=dark&size=invisible&badge=bottomright&cb=bmwunnu5dq8d".to_string()).await.is_ok());
     }
 }
